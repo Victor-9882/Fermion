@@ -1,7 +1,7 @@
 PROGRAM SPLINE_2D_FERMION_BOSON
   IMPLICIT DOUBLE PRECISION (a-h, o-z)
 
-  PARAMETER (NMG=4, NMZ=4, NMA=2*NMG*NMZ, LWORK=10*NMA)
+  PARAMETER (NMG=6, NMZ=6, NMA=2*NMG*NMZ, LWORK=10*NMA)
 
   DOUBLE PRECISION :: XMATRIX(NMA,NMA), ZMATRIX(NMA,NMA)
   DOUBLE PRECISION :: VR(NMA,NMA), VL(1,1)
@@ -101,14 +101,16 @@ PROGRAM SPLINE_2D_FERMION_BOSON
     CALL legauss(0.d0, 1.d0, Nv, Wv,  DWv,  1.d-15)
     CALL legauss(0.d0, 1.d0, Nu, Uu,  DUu,  1.d-15)
 
-    WRITE(15,'(A,I0,A,I0)') "Nv: ",Nv,"  Nu: ",Nu
-    WRITE(15,'(A20,2X,A20,2X,A20)') "v", "Uu(t)", "u = Uu(t)*(1-v)"
+
+    !WRITE(15,'(A,I0,A,I0)') "Nv: ",Nv,"  Nu: ",Nu
+    !WRITE(15,'(A20,2X,A20,2X,A20)') "v", "Uu(t)", "u = Uu(t)*(1-v)"
     do r = 1, Nv
       do t = 1, Nu
-        WRITE(15,'(F20.12,2X,F20.12,2X,F20.12)') Wv(r), Uu(t), Uu(t)*(1.d0 - Wv(r))
+        !WRITE(15,'(F20.12,2X,F20.12,2X,F20.12)') Wv(r), Uu(t), Uu(t)*(1.d0 - Wv(r))
       end do
     end do
-    WRITE(15,*) ""
+    !WRITE(15,*) ""
+
 
     if (xi == 1.d0 .or. kernel_type /= 'v') then
       CALL BUILD_ZMATRIX(zv, gv, NMZ, NMG, NMA, m, mu, kappa, PI, &
@@ -345,17 +347,16 @@ do s = 1, 2
                 v  = Wv(r)
                 dv = DWv(r)
 
-              !do t = 1, Nu
-                !u = Uu(t)
-                !du = DUu(t)
-                !u = Uu(t)*(1.d0-v)
-                !du = (1.d0 - v)*DUu(t)
-              ! if (1 - u - v > 0) then
+              do t = 1, Nu
+
+                u = Uu(t)*(1.d0-v)
+                du = (1.d0 - v)*DUu(t)
+
                 ZMATRIX(index1,index2) = ZMATRIX(index1,index2) + &
                   KERNEL_UPPER(z, zq, g, gp, v, m, mu, kappa, PI, s, f, ms, mf, Mtot, kernel_type, xi, u) * &
                   splg(k)*splz_q(l)*dzq*dgp*dv*du
-                !end if
-              !end do
+
+              end do
             end do
 
               ! Região inferior: z' em [-1, z]
@@ -365,13 +366,13 @@ do s = 1, 2
               do r = 1, Nv
                 v  = Wv(r)
                 dv = DWv(r)
-              !do t = 1, Nu
-               ! u = Uu(t)*(1.d0-v)
-               ! du = (1.d0 - v)*DUu(t)
+              do t = 1, Nu
+                u = Uu(t)*(1.d0-v)
+                du = (1.d0 - v)*DUu(t)
                 ZMATRIX(index1,index2) = ZMATRIX(index1,index2) + &
                   KERNEL_LOWER(z, zq, g, gp, v, m, mu, kappa, PI, s, f, ms, mf, Mtot, kernel_type, xi, u) * &
                   splg(k)*splz_q(l)*dzq*dgp*dv*du
-              !end do
+              end do
             end do
 
             end do  ! q
@@ -396,7 +397,7 @@ DOUBLE PRECISION FUNCTION KERNEL_UPPER(z, zp, g, gp, v, m, mu, kappa, PI, s, f, 
   INTEGER, INTENT(IN) :: s, f
   CHARACTER, INTENT(IN) :: kernel_type
   DOUBLE PRECISION :: M2_4, ku, lD1, lD2, kD  !começam com letra i-n: precisam de declaração explícita
-  LOGICAL, PARAMETER :: DEBUG_COEF = .TRUE.  ! mude para .TRUE. para ativar flags de explosão
+  LOGICAL, PARAMETER :: DEBUG_COEF = .FALSE.  ! mude para .TRUE. para ativar flags de explosão
 
   M2_4  = 0.25d0*Mtot**2
   Delta = 0.5d0*(ms - mf)
@@ -467,14 +468,14 @@ d11_0 = -(v**2 / 32.d0)                                                        &
             - 4.d0*ms**2*(-1.d0 + (-2.d0 + v)*z + zp - v*zp)                   &
             + 4.d0*(-1.d0 + v)*(1.d0 + zp)*g )
 
-    d12_0 = (v**2 / 64.d0)                                                          &
-        * ( Mtot*(1.d0 + z)*(1.d0 + zp)*(-1.d0 + (-1.d0 + v)*z - v*zp)        &
-            - 4.d0*(ms**2/Mtot)*(-1.d0 + (-2.d0 + v)*z + zp - v*zp)            &
-            + (4.d0/Mtot)*(-1.d0 + v)*(1.d0 + zp)*g )                           &
-        * ( 2.d0*mf*Mtot*(1.d0 + z)*(zp - (1.d0 + zp)*(z - v*z + v*zp))       &
-            + Mtot**2*(1.d0 + z)*(-zp*(1.d0 + zp))                              &
-            + Mtot*z*(-1.d0 + v + zp + v*zp)                                    &
-            + 8.d0*(mf/Mtot)*(-1.d0 + v)*(ms**2*(-z + zp) + g + zp*g)          &
+    d12_0 = (v**2 / (64.d0))                                    &
+        * ( Mtot*(1.d0 + z)*(1.d0 + zp)*(-1.d0 + (-1.d0 + v)*z - v*zp)      &
+            - 4.d0*(ms**2/Mtot)*(-1.d0 + (-2.d0 + v)*z + zp - v*zp)          &
+            + (4.d0/Mtot)*(-1.d0 + v)*(1.d0 + zp)*g )                       &
+        * ( 2.d0*mf*Mtot*(1.d0 + z)*(zp - (1.d0 + zp)*(z - v*z + v*zp))     &
+            + Mtot**2*(1.d0 + z)*(-v*zp*(1.d0 + zp))                        &
+            + Mtot*z*(-1.d0 + v + zp + v*zp)                                &
+            + 8.d0*(mf/Mtot)*(-1.d0 + v)*(ms**2*(-z + zp) + g + zp*g)        &
             + 4.d0*(ms**2*(v*zp - z*(-1.d0 + v + zp)) + (-1.d0 + v + zp + v*zp)*g) )
 
 
@@ -484,12 +485,12 @@ d11_0 = -(v**2 / 32.d0)                                                        &
                + 4.d0*ms**2*(-1.d0 + (-2.d0 + v)*z + zp - v*zp)                &
                - 4.d0*(-1.d0 + v)*(1.d0 + zp)*g) )
 
-    d22_0 = (v**2 / 32.d0)                                                          &
+d22_0 = (v**2 / (32.d0))                                         &
         * ( (1.d0/Mtot**2)*(1.d0 + z)*(1.d0 + zp)*(-1.d0 + (-1.d0 + v)*z - v*zp) &
-            - 4.d0*ms**2*(-1.d0 + (-2.d0 + v)*z + zp - v*zp)                   &
-            + 4.d0*(-1.d0 + v)*(1.d0 + zp)*g )                                  &
-        * ( -2.d0*mf*Mtot*(1.d0 + z)*zp                                         &
-            + (1.d0 + z)*(2.d0*zp - (1.d0 + zp)*(z - v*z + v*zp))               &
+            - 4.d0*ms**2*(-1.d0 + (-2.d0 + v)*z + zp - v*zp)                     &
+            + 4.d0*(-1.d0 + v)*(1.d0 + zp)*g )                                   &
+        * ( -2.d0*mf*Mtot*(1.d0 + z)*zp                                          &
+            + (1.d0 + z)*(2.d0*zp - (1.d0 + zp)*(z - v*z + v*zp))                &
             + 4.d0*(-1.d0 + v)*(ms**2*(-z + zp) + g + zp*g) )
 
     d11_2 = v*(1.d0 + z)                                                            &
@@ -563,14 +564,15 @@ d12_3 = ((1.d0 + z)**2 / (4.d0*denom3))                                         
             - (3.d0 - 4.d0*v + z)*zp))*g                                        &
             + 2.d0*(5.d0 + 2.d0*v**2*zp - v*(4.d0 + zp))*g**2) )
 
-d21_3 = ((1.d0 + z)**2 / denom3)                                                &
-        * ( Mtot*(1.d0 + z)*(2.d0*Mtot**2*mf*(1.d0 + z)*(3.d0 - 3.d0*z         &
-            + 2.d0*v*(-1.d0 + z + 2.d0*zp))                                    &
-            + Mtot**3*(1.d0 + z)*(-3.d0 + 9.d0*z + 2.d0*v*(1.d0 - 3.d0*z       &
-            + (-3.d0 + z)*zp)))                                                &
-            + 8.d0*mf*(-3.d0 + 2.d0*v)*(ms**2 + g)                              &
-            + 4.d0*Mtot*(ms**2*(3.d0 - 6.d0*z + 2.d0*v*(-1.d0 + 2.d0*z + zp))  &
-            + (9.d0 + 2.d0*v*(-3.d0 + zp))*g) )
+d21_3 = (1.d0 / denom3)                                                    &
+        * ( Mtot*(1.d0 + z) * ( 2.d0*Mtot**2*mf*(1.d0 + z)*(3.d0 - 3.d0*z  &
+            + 2.d0*v*(-1.d0 + z + 2.d0*zp))                                &
+            + Mtot**3*(1.d0 + z)*(-3.d0 + 9.d0*z + 2.d0*v*(1.d0 - 3.d0*z   &
+            + (-3.d0 + z)*zp))                                             &
+            + 8.d0*mf*(-3.d0 + 2.d0*v)*(ms**2 + g)                         &
+            + 4.d0*Mtot*(ms**2*(3.d0 - 6.d0*z + 2.d0*v*(-1.d0 + 2.d0*z + zp)) &
+            + (9.d0 + 2.d0*v*(-3.d0 + zp))*g) ) )
+
 
 d22_3 = ((1.d0 + z)**2                                                           &
         / (2.d0*(Mtot**4*(1.d0 + z)**4 - 8.d0*Mtot**2*(1.d0 + z)**2            &
@@ -703,6 +705,55 @@ d22_6 = (2.d0*(-1.d0 + v)*(1.d0 + z)**2                                        &
       if(d22_6/=d22_6.or.abs(d22_6)>1d10)write(*,*)'[UP] d22_6=',d22_6,' z=',z,' zp=',zp,' g=',g,' gp=',gp,' v=',v,' s,f=',s,f
     end if
 
+    if(z>0.7000000d0  .and. g > 0.3d0 .and. g < 0.4d0 .and. gp >1.4d0 .and. gp<1.6d0 .and. z<0.83d0 .and. zp <0.85d0 .and. &
+    zp >0.8d0 .and. v==0.5d0 .and. u == 0.25d0 .and. s ==1 .and. f==1) then
+      write(*,*) 'aaaa'
+      WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] f2=', f2, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] Du2  =',Du2, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d11_0=',d11_0, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d12_0=',d12_0, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d21_0=',d21_0, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d22_0=',d22_0, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d11_2=',d11_2, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d12_2=',d12_2, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d21_2=',d21_2, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d22_2=',d22_2, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d11_3=',d11_3, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d12_3=',d12_3, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d21_3=',d21_3, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d22_3=',d22_3, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d11_5=',d11_5, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d12_5=',d12_5, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d21_5=',d21_5, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d22_5=',d22_5, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d11_6=',d11_6, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d12_6=',d12_6, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d21_6=',d21_6, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[UP] d22_6=',d22_6, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+    end if
+
 if (f==1 .and. s==1) Bsf_xi = (d11_0 + f2 * (d11_2 + 0.25*d11_3*(Mtot/2.0*ku - z*Mtot**2/4.0)) &
                                + 0.25*d11_5*Mtot**2 &
                                + 0.25*d11_6*(-Mtot*z/2.0*ku - g))
@@ -723,10 +774,8 @@ if (f==2 .and. s==2) Bsf_xi = (d22_0 + f2 * (d22_2 + 0.25*d22_3*(Mtot/2.0*ku - z
     denom1 = Du2**3
     denom2 = ku**2 + z*Mtot*ku + Mtot**2*z**2/4.0 + 4.0*g
 
-    fator_extra = (Mtot**4 * (z + 1)**4 - 8*Mtot**2 * (z + 1)**2 * (ms**2 - g) + 16*(g + ms**2)**2) &
-                  / (4 * Mtot**2 * (z + 1)**2)
 
-    Pij2 = -2.0 * v**2 / (D0 * denom1 * denom2) * Bsf_xi*fator_extra
+    Pij2 = -2.0 * v**2 / (D0 * denom1 * denom2) * Bsf_xi
 
     if (DEBUG_COEF) then
       if(Bsf_xi/=Bsf_xi.or.abs(Bsf_xi)>1d10) &
@@ -769,7 +818,7 @@ DOUBLE PRECISION FUNCTION KERNEL_LOWER(z, zp, g, gp, v, m, mu, kappa, PI, s, f, 
   INTEGER, INTENT(IN) :: s, f
   CHARACTER, INTENT(IN) :: kernel_type
   DOUBLE PRECISION :: M2_4, kd, lD1, Ld2  ! k,M começam com letra i-n: precisam de declaração explícita
-  LOGICAL, PARAMETER :: DEBUG_COEF = .TRUE.  ! mude para .TRUE. para ativar flags de explosão
+  LOGICAL, PARAMETER :: DEBUG_COEF = .FALSE.  ! mude para .TRUE. para ativar flags de explosão
 
   M2_4  = 0.25d0*Mtot**2
   Delta = 0.5d0*(ms - mf)
@@ -982,6 +1031,55 @@ d22_6 = ((1.d0 - z)**2                                                          
       if(d22_6/=d22_6.or.abs(d22_6)>1d30)write(*,*)'[LO] d22_6=',d22_6,' z=',z,' zp=',zp,' g=',g,' gp=',gp,' v=',v,' s,f=',s,f
     end if
 
+    if(z>0.7000000d0  .and. g > 0.3d0 .and. g < 0.4d0 .and. gp >1.4d0 .and. gp<1.6d0 .and. z<0.8d0 .and. zp <0.71d0 .and. &
+    zp >0.7d0 .and. v==0.5d0 .and. u == 0.25d0 .and. s ==1 .and. f==1) then
+
+      WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] f2=', f2, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] Dd2  =',Dd2, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d11_0=',d11_0, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d12_0=',d12_0, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d21_0=',d21_0, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d22_0=',d22_0, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d11_2=',d11_2, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d12_2=',d12_2, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d21_2=',d21_2, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d22_2=',d22_2, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d11_3=',d11_3, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d12_3=',d12_3, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d21_3=',d21_3, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d22_3=',d22_3, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d11_5=',d11_5, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d12_5=',d12_5, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d21_5=',d21_5, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d22_5=',d22_5, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d11_6=',d11_6, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d12_6=',d12_6, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d21_6=',d21_6, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
+     '[LO] d22_6=',d22_6, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+    end if
+
 if (f==1 .and. s==1) Bsf_xi = (d11_0 + f2 * (d11_2 + 0.25*d11_3*(Mtot/2.0*kd - z*Mtot**2/4.0)) &
                                + 0.25*d11_5*Mtot**2 &
                                + 0.25*d11_6*(-Mtot*z/2.0*kd - g))
@@ -1001,9 +1099,7 @@ if (f==2 .and. s==2) Bsf_xi = (d22_0 + f2 * (d22_2 + 0.25*d22_3*(Mtot/2.0*kd - z
 
     denom1 = Dd2**3
     denom2 = kd**2 + z*Mtot*kd + Mtot**2*z**2/4.0 + 4.0*g
-    fator_extra = (Mtot**4 * (z - 1)**4 - 8*Mtot**2 * (z - 1)**2 * (mf**2 - g) + 16*(g + mf**2)**2) &
-                  / (4 * Mtot**2 * (z - 1)**2)
-    Pij2 = -2.0 * v**2 / (D0 * denom1 * denom2) * Bsf_xi*fator_extra
+    Pij2 = -2.0 * v**2 / (D0 * denom1 * denom2) * Bsf_xi
 
     if (DEBUG_COEF) then
       if(Bsf_xi/=Bsf_xi.or.abs(Bsf_xi)>1d30) &
