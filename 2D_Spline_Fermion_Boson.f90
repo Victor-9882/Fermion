@@ -1,14 +1,14 @@
 PROGRAM SPLINE_2D_FERMION_BOSON
   IMPLICIT DOUBLE PRECISION (a-h, o-z)
 
-  PARAMETER (NMG=10, NMZ=10, NMA=2*NMG*NMZ, LWORK=10*NMA)
+  PARAMETER (NMG=6, NMZ=6, NMA=2*NMG*NMZ, LWORK=10*NMA)
 
   DOUBLE PRECISION :: XMATRIX(NMA,NMA), ZMATRIX(NMA,NMA)
   DOUBLE PRECISION :: VR(NMA,NMA), VL(1,1)
   DOUBLE PRECISION :: ALPHAR(NMA), ALPHAI(NMA), BETA(NMA)
   DOUBLE PRECISION :: WR(NMA), WI(NMA), WORK(LWORK)
   DOUBLE PRECISION :: zv(NMZ+1), gv(NMG+1)
-  DOUBLE PRECISION :: c(NMG,NMZ), XG(NMA), YG(NMA)
+  DOUBLE PRECISION :: c(2, NMG,NMZ), XG(NMA), YG(NMA)
   DOUBLE PRECISION :: Xq(1000), DXq(1000), Yp(1000), DYp(1000)
   DOUBLE PRECISION :: Wv(1000), DWv(1000)
 
@@ -25,6 +25,7 @@ PROGRAM SPLINE_2D_FERMION_BOSON
   open(unit=12, file="alfa.dat",         STATUS="UNKNOWN")
   open(unit=13, file="ZMatrix",          STATUS="UNKNOWN")
   open(unit=14, file="XMatrix",          STATUS="UNKNOWN")
+  open(unit=15, file="outro.dat",         STATUS="UNKNOWN")
   open(unit=16, file="coeficientes.dat", STATUS="UNKNOWN")
   open(unit=20, file="inputs.dat",       STATUS="UNKNOWN")
 
@@ -38,11 +39,11 @@ PROGRAM SPLINE_2D_FERMION_BOSON
   END DO
   CLOSE(20)
 
-  Mtot  = 1.50d0
+  Mtot  = 1.90d0
   mf     = 1.d0
   ms = 1.d0
   m = (ms + mf)/2
-  mu    = 0.50d0
+  mu    = 0.15d0
   kappa = SQRT(m**2 - 0.25d0*Mtot**2)
   gam0  = 3.d0
 
@@ -144,15 +145,20 @@ PROGRAM SPLINE_2D_FERMION_BOSON
 
     WRITE(10,'(9999ES16.8)') (VR(j,1), j=1, NMA)
 
-    do j = 1, NMZ
-      do i = 1, NMG
-        c(i,j) = DABS(VR(i + (j-1)*NMG, 1))
+   
+    do s = 1, 2
+      do j = 1, NMZ
+        do i = 1, NMG
+          c(s,i,j) = DABS(VR(i + (j-1)*NMG + (s-1)*NMG*NMZ, 1))
+        end do
       end do
     end do
 
-    DO i = 1, NMG
-      WRITE(16,'(9999ES16.8)') (c(i,j), j=1, NMZ)
-    END DO
+DO s = 1, 2
+  DO i = 1, NMG
+    WRITE(16,'(9999ES16.8)') (c(s,i,j), j=1, NMZ)
+  END DO
+END DO
 
   END DO
 
@@ -317,6 +323,7 @@ DOUBLE PRECISION FUNCTION KERNEL_UPPER(z, zp, g, gp, v, m, mu, kappa, PI, s, f, 
     if (f==2 .and. s==1) Bsf = c21_0
     if (f==2 .and. s==2) Bsf = c22_0
   end if
+
 
   KERNEL_UPPER = (1.d0+z)**2 / (32.d0*PI**2 * D0) * v**2 * Bsf / Du**2
 
