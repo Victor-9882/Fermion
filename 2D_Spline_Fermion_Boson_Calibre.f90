@@ -1,7 +1,7 @@
 PROGRAM SPLINE_2D_FERMION_BOSON
   IMPLICIT DOUBLE PRECISION (a-h, o-z)
 
-  PARAMETER (NMG=6, NMZ=6, NMA=2*NMG*NMZ, LWORK=10*NMA)
+  PARAMETER (NMG=22, NMZ=16, NMA=2*NMG*NMZ, LWORK=10*NMA)
 
   DOUBLE PRECISION :: XMATRIX(NMA,NMA), ZMATRIX(NMA,NMA)
   DOUBLE PRECISION :: VR(NMA,NMA), VL(1,1)
@@ -47,7 +47,7 @@ PROGRAM SPLINE_2D_FERMION_BOSON
   mu    = 0.15d0
   kappa = SQRT(m**2 - 0.25d0*Mtot**2)
   gam0  = 3.d0
-  xi = 0.9d0
+  xi = 1.d0
 
   WRITE(10,'(A,I0,A,I0,A,I0)') "NMA: ",NMA," NMG: ",NMG," NMZ: ",NMZ
   WRITE(10,'(A,F20.10,A,F20.10,A,F20.10,A,F20.10,A,F20.10,A,F20.10,A,F20.10,A,F20.10,A,F20.10)') &
@@ -229,13 +229,14 @@ do s = 1, 2
     print*, i
     do j = 1, Nmz
       z      = zv(j)
-      index1 = (s-1)*Nmg*Nmz + (j-1)*Nmg + i
+      
       call SPLMD1(zv, Nmz, z, splz_z)
 
       do f = 1, 2
       do k = 1, Nmg
         do l = 1, Nmz
-          index2 = (f-1)*Nmg*Nmz + (l-1)*Nmg + k
+          index1 = (f-1)*Nmg*Nmz + (j-1)*Nmg + i
+          index2 = (s-1)*Nmg*Nmz + (l-1)*Nmg + k
 
           do p = 1, Ng
             gp  = Yp(p)
@@ -315,13 +316,14 @@ do s = 1, 2
     print*, i
     do j = 1, Nmz
       z      = zv(j)
-      index1 = (s-1)*Nmg*Nmz + (j-1)*Nmg + i
+      
       call SPLMD1(zv, Nmz, z, splz_z)
 
       do f = 1, 2
       do k = 1, Nmg
         do l = 1, Nmz
-          index2 = (f-1)*Nmg*Nmz + (l-1)*Nmg + k
+         index1 = (f-1)*Nmg*Nmz + (j-1)*Nmg + i
+          index2 = (s-1)*Nmg*Nmz + (l-1)*Nmg + k
 
           do p = 1, Ng
             gp  = Yp(p)
