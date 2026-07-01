@@ -1,7 +1,7 @@
 PROGRAM SPLINE_2D_FERMION_BOSON
   IMPLICIT DOUBLE PRECISION (a-h, o-z)
 
-  PARAMETER (NMG=10, NMZ=10, NMA=2*NMG*NMZ, LWORK=10*NMA)
+  PARAMETER (NMG=6, NMZ=6, NMA=2*NMG*NMZ, LWORK=10*NMA)
 
   DOUBLE PRECISION :: XMATRIX(NMA,NMA), ZMATRIX(NMA,NMA)
   DOUBLE PRECISION :: VR(NMA,NMA), VL(1,1)
@@ -758,7 +758,7 @@ if (f==2 .and. s==2) Bsf_xi = (d22_0 + f2 * (d22_2 + 0.25*d22_3*(Mtot/2.0*ku - z
                                + 0.25*d22_6*(-Mtot*z/2.0*ku - g))
 
     denom1 = Du_calibre**3
-    denom2 = ku**2 + z*Mtot*ku + Mtot**2*z**2/4.0 + 4.0*g
+    denom2 = 1.d0
 
 
     Pij2 = -2.0 * v**2 / (D0 * denom1 * denom2) * Bsf_xi
@@ -1076,7 +1076,7 @@ if (f==2 .and. s==2) Bsf_xi = (d22_0 + f2 * (d22_2 + 0.25*d22_3*(Mtot/2.0*kd - z
                                + 0.25*d22_6*(-Mtot*z/2.0*kd - g))
 
     denom1 = Dd_calibre**3
-    denom2 = kd**2 + z*Mtot*kd + Mtot**2*z**2/4.0 + 4.0*g
+    denom2 = 1.d0
     Pij2 = -2.0 * v**2 / (D0 * denom1 * denom2) * Bsf_xi
 
     if (DEBUG_COEF) then
