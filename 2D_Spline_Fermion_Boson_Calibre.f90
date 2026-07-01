@@ -30,7 +30,7 @@ PROGRAM SPLINE_2D_FERMION_BOSON
   open(unit=16, file="coeficientes.dat", STATUS="UNKNOWN")
   open(unit=20, file="inputs.dat",       STATUS="UNKNOWN")
 
-  e  = 0.000001d0
+  e  =  0.000001d0
   PI = DACOS(-1.d0)
 
   READ(20,*) NPARAM
@@ -447,7 +447,7 @@ DOUBLE PRECISION FUNCTION KERNEL_UPPER(z, zp, g, gp, v, m, mu, kappa, PI, s, f, 
         - ms**2 * v*(1.d0 - v)*(zp - z) &
         - mu**2 * (1.d0 + z)*(1.d0 - u - v + xi*u)
 
-    Du_calibre = (1.d0/4.d0)*v &
+    Du_c = (1.d0/4.d0)*v &
                 * (4.d0*g + 4.d0*gp - (Mtot**2*(z+1.d0)*(zp+1.d0)*((v-1.d0)*z-v*zp+1.d0)) &
                 + mf**2*(z+1.d0) + 2.d0*mf*ms*(z+1.d0) &
                 + 4.d0*ms**2*v*z - 4.d0*ms**2*v*zp - 3.d0*ms**2*z + 4.d0*ms**2*zp + ms**2 &
@@ -456,7 +456,7 @@ DOUBLE PRECISION FUNCTION KERNEL_UPPER(z, zp, g, gp, v, m, mu, kappa, PI, s, f, 
 
 ! Coeficientes vetoriais de P2 (xi != 1) (Calibre arbitrário)
 
-d11_0 = -(v**2 / 32.d0)                                                        &
+d11_0 = -(v**2 / 32.d0)*(1+z)                                                  &
         * ( -4.d0*ms**2*(-1.d0 + z)                                             &
             + Mtot**2*(1.d0 + z)*(-1.d0 + 2.d0*z - zp)                         &
             - 2.d0*mf*Mtot*(1.d0 + z)*zp                                        &
@@ -465,7 +465,7 @@ d11_0 = -(v**2 / 32.d0)                                                        &
             - 4.d0*ms**2*(-1.d0 + (-2.d0 + v)*z + zp - v*zp)                   &
             + 4.d0*(-1.d0 + v)*(1.d0 + zp)*g )
 
-    d12_0 = v**2*(Mtot**2*(z+1.d0)*(zp+1.d0)*((v-1.d0)*z-v*zp-1.d0) &
+    d12_0 = v**2*(1+z)*(Mtot**2*(z+1.d0)*(zp+1.d0)*((v-1.d0)*z-v*zp-1.d0) &
      - 4.d0*ms**2*((v-2.d0)*z-v*zp+zp-1.d0) &
      + 4.d0*g*(v-1.d0)*(zp+1.d0)) &
      * (Mtot**3*(z+1.d0)*(z*(v*zp+v+zp-1.d0)-v*zp*(zp+1.d0)) &
@@ -475,13 +475,13 @@ d11_0 = -(v**2 / 32.d0)                                                        &
      - 8.d0*mf*(v-1.d0)*(ms**2*(z-zp)-g*(zp+1.d0)))/(64.d0*Mtot)
 
 
-    d21_0 = -((1.d0 + z) / 16.d0)                                                  &
+    d21_0 = -((1.d0 + z)**2 / 16.d0)                                                  &
         * ( (Mtot*v**2*(2.d0*mf + Mtot*(-1.d0 + zp)))                          &
             * (-Mtot**2*(1.d0 + z)*(1.d0 + zp)*(-1.d0 + (-1.d0 + v)*z - v*zp) &
                + 4.d0*ms**2*(-1.d0 + (-2.d0 + v)*z + zp - v*zp)                &
                - 4.d0*(-1.d0 + v)*(1.d0 + zp)*g) )
 
-d22_0 = (1.d0/32.d0)*v**2 &
+d22_0 = (1.d0/32.d0)*v**2*(1+z) &
      * (-(Mtot**2*(z+1.d0)*(zp+1.d0)*((v-1.d0)*z-v*zp-1.d0)) &
      + 4.d0*ms**2*((v-2.d0)*z-v*zp+zp-1.d0) &
      - 4.d0*g*(v-1.d0)*(zp+1.d0)) &
@@ -560,7 +560,7 @@ d12_3 = ((1.d0 + z)**2 / (4.d0*denom3))                                         
             - (3.d0 - 4.d0*v + z)*zp))*g                                        &
             + 2.d0*(5.d0 + 2.d0*v**2*zp - v*(4.d0 + zp))*g**2) )
 
-d21_3 = (Mtot**2*(z+1.d0)**4 &
+d21_3 = -(Mtot**2*(z+1.d0)**4 &
      * (Mtot**2*(-2.d0*v*(z*zp+z-2.d0*zp-4.d0)+z-8.d0) &
      + 2.d0*(Mtot/2.d0-(2.d0*(g+ms**2))/(Mtot*(z+1.d0))) &
        * (Mtot*(2.d0*v*(2.d0*z+zp+1.d0)-6.d0*z-1.d0)+2.d0*mf*(2.d0*v-3.d0)) &
@@ -587,14 +587,13 @@ d12_4 = (1.d0 + z)**2*(Mtot + 2.d0*mf)                                          
 
 d22_4 = (1.d0 + z)**2 / 2.d0
 
-d11_5 = (Mtot*(z+1.d0)**4*(v*zp+1.d0) &
-     * (Mtot**3*z**2 &
-     + 2.d0*(-4.d0*g+Mtot**2*z**2+4.d0*Mtot*mf*z)*(Mtot/2.d0-(2.d0*(g+ms**2))/(Mtot*(z+1.d0))) &
-     - 4.d0*Mtot*(z-1.d0)*(Mtot/2.d0-(2.d0*(g+ms**2))/(Mtot*(z+1.d0)))**2 &
-     + 4.d0*g*Mtot*(z+2.d0)+16.d0*g*mf)) &
-     / (2.d0*(Mtot**4*(z+1.d0)**4-8.d0*Mtot**2*(z+1.d0)**2*(ms**2-g)+16.d0*(g+ms**2)**2))
+d11_5 = -(((z+1.0d0)**3*(v*zp+1.0d0)*(Mtot**4*(2.0d0*z**4+3.0d0*z**3+z**2+z+1.0d0) &
+        +4.0d0*Mtot**3*mf*z*(z+1.0d0)**2-4.0d0*Mtot**2*(z+1.0d0)*(g+ms**2*(z**2 &
+        -2.0d0*z+2.0d0)-4.0d0*g*z)-16.0d0*Mtot*mf*(z+1.0d0)*(ms**2*z-g)-16.0d0 &
+        *(g+ms**2)*(ms**2*(z-1.0d0)-2.0d0*g)))/(2.0d0*(Mtot**4*(z+1.0d0)**4 &
+        -8.0d0*Mtot**2*(z+1.0d0)**2*(ms**2-g)+16.0d0*(g+ms**2)**2)))
 
-d12_5 = ((1.d0 + z)**2*(1.d0 + v*zp)                                            &
+d12_5 = ((1.d0 + z)**3*(1.d0 + v*zp)                                            &
         / (4.d0*(Mtot**4*(1.d0 + z)**4 - 8.d0*Mtot**2*(1.d0 + z)**2            &
            *(ms**2 - g) + 16.d0*(ms**2 + g)**2)))                                &
         * ( 2.d0*Mtot**3*mf*(1.d0 + z)**2*((-1.d0 + z)*z + v*(1.d0 + z)**2*zp) &
@@ -610,7 +609,7 @@ d12_5 = ((1.d0 + z)**2*(1.d0 + v*zp)                                            
             + 16.d0*(ms**4*(z - 2.d0*z**2 + v*zp) + ms**2*(-1.d0 + 5.d0*z      &
               + 2.d0*v*zp)*g + (-3.d0 + v*zp)*g**2) )
 
-d21_5 = -(Mtot*(1.d0 + z)**3*(1.d0 + v*zp)                                      &
+d21_5 = -(Mtot*(1.d0 + z)**4*(1.d0 + v*zp)                                      &
         / (Mtot**4*(1.d0 + z)**4 - 8.d0*Mtot**2*(1.d0 + z)**2*(ms**2 - g)      &
            + 16.d0*(ms**2 + g)**2))                                               &
         * ( Mtot**3*(1.d0 + z)*(-1.d0 + 3.d0*z)                                 &
@@ -620,7 +619,7 @@ d21_5 = -(Mtot*(1.d0 + z)**3*(1.d0 + v*zp)                                      
 
 
 
-     d22_5 = (Mtot*(z+1.d0)**4*(v*zp+1.d0) &
+     d22_5 = (Mtot*(z+1.d0)**5*(v*zp+1.d0) &
      * (Mtot**3*v*z**2*zp &
      + 2.d0*(Mtot/2.d0-(2.d0*(g+ms**2))/(Mtot*(z+1.d0))) &
        * (-4.d0*g+Mtot**2*z*(2.d0*v*zp+z-2.d0)+4.d0*Mtot*mf*z) &
@@ -628,7 +627,7 @@ d21_5 = -(Mtot*(1.d0 + z)**3*(1.d0 + v*zp)                                      
      + 4.d0*g*Mtot*(4.d0*v*zp+z-2.d0)+16.d0*g*mf)) &
      / (2.d0*(Mtot**4*(z+1.d0)**4-8.d0*Mtot**2*(z+1.d0)**2*(ms**2-g)+16.d0*(g+ms**2)**2))
 
-d11_6 = -(2.d0*Mtot*(-1.d0 + v)*(1.d0 + z)**3                                  &
+d11_6 = -(2.d0*Mtot*(-1.d0 + v)*(1.d0 + z)**4                                  &
         / (Mtot**4*(1.d0 + z)**4 - 8.d0*Mtot**2*(1.d0 + z)**2*(ms**2 - g)      &
            + 16.d0*(ms**2 + g)**2))                                              &
         * ( Mtot**3*(1.d0 + z)*(-1.d0 + 3.d0*z)                                 &
@@ -636,7 +635,7 @@ d11_6 = -(2.d0*Mtot*(-1.d0 + v)*(1.d0 + z)**3                                  &
             - 8.d0*mf*(ms**2 + g)                                                &
             + 4.d0*Mtot*(ms**2*(1.d0 - 2.d0*z) + 3.d0*g) )
 
-d12_6 = ((-1.d0 + v)*(1.d0 + z)**2                                              &
+d12_6 = ((-1.d0 + v)*(1.d0 + z)**3                                              &
         / (Mtot**4*(1.d0 + z)**4 - 8.d0*Mtot**2*(1.d0 + z)**2*(ms**2 - g)      &
            + 16.d0*(ms**2 + g)**2))                                              &
         * ( Mtot**4*(1.d0 + z)**2*((-3.d0 + z)*z + v*(1.d0 + z)**2)            &
@@ -649,12 +648,12 @@ d12_6 = ((-1.d0 + v)*(1.d0 + z)**2                                              
               + 2.d0*v*(1.d0 + z)) - 3.d0*g                                     & ! Corrigido: Sinal de +
               + 2.d0*(v + z + v*z)*g) )
 
-d21_6 = (4.d0*Mtot**2*(-1.d0 + v)*(1.d0 + z)**3                                &
+d21_6 = (4.d0*Mtot**2*(-1.d0 + v)*(1.d0 + z)**4                                &
         * (Mtot*(4.d0*mf + Mtot*(-3.d0 + z))*(1.d0 + z) + 4.d0*(ms**2 + g))   &
         / (Mtot**4*(1.d0 + z)**4 - 8.d0*Mtot**2*(1.d0 + z)**2*(ms**2 - g)      &
            + 16.d0*(ms**2 + g)**2))
 
-d22_6 = (2.d0*(-1.d0 + v)*(1.d0 + z)**2                                        &
+d22_6 = (2.d0*(-1.d0 + v)*(1.d0 + z)**3                                        &
         / (Mtot**4*(1.d0 + z)**4 - 8.d0*Mtot**2*(1.d0 + z)**2*(ms**2 - g)      &
            + 16.d0*(ms**2 + g)**2))                                              &
         * ( -2.d0*Mtot**3*mf*(-1.d0 + z)*(1.d0 + z)**2                         & ! Corrigido: (-1.d0 + z)
@@ -696,7 +695,7 @@ d22_6 = (2.d0*(-1.d0 + v)*(1.d0 + z)**2                                        &
       WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
      '[UP] f2=', f2, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
      WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
-     '[UP] Du2  =',Du2, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
+     '[UP] Du2  =',Du_c, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
      WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
      '[UP] d11_0=',d11_0, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
      WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
@@ -757,7 +756,7 @@ if (f==2 .and. s==2) Bsf_xi = (d22_0 + f2 * (d22_2 + 0.25*d22_3*(Mtot/2.0*ku - z
                                + 0.25*d22_5*Mtot**2 &
                                + 0.25*d22_6*(-Mtot*z/2.0*ku - g))
 
-    denom1 = Du_calibre**3
+    denom1 = Du_c**3
     denom2 = 1.d0
 
 
@@ -773,6 +772,8 @@ if (f==2 .and. s==2) Bsf_xi = (d22_0 + f2 * (d22_2 + 0.25*d22_3*(Mtot/2.0*ku - z
       if(Pij2  /=Pij2  .or.abs(Pij2  )>1d10) &
         write(*,*)'[UP] Pij2   =',Pij2  ,' z=',z,' zp=',zp,' g=',g,' gp=',gp,' v=',v,' s,f=',s,f
     end if
+    
+    
   end if
 
   else
@@ -805,7 +806,7 @@ DOUBLE PRECISION FUNCTION KERNEL_LOWER(z, zp, g, gp, v, m, mu, kappa, PI, s, f, 
   INTEGER, INTENT(IN) :: s, f
   CHARACTER, INTENT(IN) :: kernel_type
   DOUBLE PRECISION :: M2_4, kd, lD1, Ld2  ! k,M começam com letra i-n: precisam de declaração explícita
-  LOGICAL, PARAMETER :: DEBUG_COEF = .FALSE.  ! mude para .TRUE. para ativar flags de explosão
+  LOGICAL, PARAMETER :: DEBUG_COEF = .TRUE.  ! mude para .TRUE. para ativar flags de explosão
 
   M2_4  = 0.25d0*Mtot**2
   Delta = 0.5d0*(ms - mf)
@@ -867,14 +868,14 @@ DOUBLE PRECISION FUNCTION KERNEL_LOWER(z, zp, g, gp, v, m, mu, kappa, PI, s, f, 
 
 !Coeficientes Aline Kd
 
-d11_0 = ((Mtot + 2.d0*mf)*v**2*(2.d0*mf + Mtot*(-1.d0 + zp))*(1.d0 - z)       &
+d11_0 = ((Mtot + 2.d0*mf)*v**2*(2.d0*mf + Mtot*(-1.d0 + zp))*(1.d0 - z)**2       &
         / 32.d0)                                                                  &
         * ( 4.d0*mf**2*(-1.d0 + (-2.d0 + v)*z + zp - v*zp)                     &
             - Mtot**2*(-1.d0 + z)                                                &
             * (1.d0 + z*(3.d0 - v + (-1.d0 + v)*zp) + zp*(-3.d0 + v - v*zp))   &
             + 4.d0*(-3.d0 + v + zp - v*zp)*g )
 
-d12_0 = (v**2*(Mtot+2.d0*mf) &
+d12_0 = (v**2*(Mtot+2.d0*mf)*(1-z) &
      * (Mtot**2*(z-1.d0)*(zp-1.d0)*((v-1.d0)*z-v*zp) &
         - 2.d0*Mtot*mf*(z-1.d0)*zp &
         - 4.d0*(v-1.d0)*(g+mf**2*(z-zp)-g*zp)) &
@@ -882,7 +883,7 @@ d12_0 = (v**2*(Mtot+2.d0*mf) &
         - 4.d0*(mf**2*((v-2.d0)*z-v*zp+zp-1.d0)+g*(v*(-zp)+v+zp-3.d0)))) &
      / (64.d0*Mtot)
 
-d21_0 = (Mtot*v**2*(1.d0 - z) / 16.d0)                                          &
+d21_0 = (Mtot*v**2*(1.d0 - z)**2 / 16.d0)                                          &
         * ( (2.d0*mf + Mtot*(-1.d0 + zp))                                       &
             * (4.d0*mf**2*(-1.d0 + (-2.d0 + v)*z + zp - v*zp)                  &
                - Mtot**2*(-1.d0 + z)                                             &
@@ -890,7 +891,7 @@ d21_0 = (Mtot*v**2*(1.d0 - z) / 16.d0)                                          
                   + zp*(-3.d0 + v - v*zp))                                       &
                + 4.d0*(-3.d0 + v + zp - v*zp)*g) )
 
-d22_0 = (v**2 / 32.d0)                                                           &
+d22_0 = (v**2 / 32.d0)*(1-z)                                                  &
         * ( -4.d0*mf**2*(-1.d0 + (-2.d0 + v)*z + zp - v*zp)                    &
             + Mtot**2*(-1.d0 + z)*(1.d0 + z*(3.d0 - v + (-1.d0 + v)*zp)        &
               + zp*(-3.d0 + v - v*zp))                                           &
@@ -942,40 +943,40 @@ d12_4 = (Mtot + 2.d0*mf)*(1.d0 - z)**2                                          
 
 d22_4 = (1.d0 - z)**2 / 2.d0
 
-d11_5 = ((Mtot + 2.d0*mf)**2*(-1.d0 + z)*(1.d0 - z)**2*(1.d0 + v*zp))         &
-        / (2.d0*(Mtot + 2.d0*mf - Mtot*z)**2 + 8.d0*g)
+d11_5 = -(((z-1.0d0)**4*(Mtot+2.0d0*mf)**2*(v*zp+1.0d0))/(2.0d0*Mtot**2*(z-1.0d0)**2 &
+        -8.0d0*Mtot*mf*(z-1.0d0)+8.0d0*(g+mf**2)))
 
-d12_5 = ((Mtot + 2.d0*mf)*(1.d0 + v*zp)*(1.d0 - z)**2                          &
+d12_5 = ((Mtot + 2.d0*mf)*(1.d0 + v*zp)*(1.d0 - z)**3                          &
         / (4.d0*((Mtot + 2.d0*mf - Mtot*z)**2 + 4.d0*g)))                       &
         * ( -4.d0*mf*v*(-1.d0 + z)*zp                                           &
             - 4.d0*(mf**2/Mtot)*(z - v*zp)                                      &
             + Mtot*(-1.d0 + z)*(-z + v*(-1.d0 + z)*zp)                          &
             + (4.d0/Mtot)*(-1.d0 + v*zp)*g )
 
-d21_5 = (Mtot*(Mtot + 2.d0*mf)*(-1.d0 + z)*(1.d0 - z)**2*(1.d0 + v*zp))       &
+d21_5 = (Mtot*(Mtot + 2.d0*mf)*(-1.d0 + z)*(1.d0 - z)**3*(1.d0 + v*zp))       &
         / ((Mtot + 2.d0*mf - Mtot*z)**2 + 4.d0*g)
 
-d22_5 = ((1.d0 - z)**2                                                           &
+d22_5 = ((1.d0 - z)**3                                                           &
         / (2.d0*(Mtot + 2.d0*mf - Mtot*z)**2 + 8.d0*g))                        &
         * ( (1.d0 + v*zp)*(-4.d0*Mtot*mf*v*(-1.d0 + z)*zp                      &
             - 4.d0*mf**2*(z - v*zp)                                              &
             + Mtot**2*(-1.d0 + z)*(-z + v*(-1.d0 + z)*zp)                       &
             + 4.d0*(-1.d0 + v*zp)*g) )
 
-  d11_6 = (2.d0*Mtot*(Mtot + 2.d0*mf)*(-1.d0 + v)*(-1.d0 + z)*(1.d0 - z)**2)    &
+  d11_6 = (2.d0*Mtot*(Mtot + 2.d0*mf)*(-1.d0 + v)*(-1.d0 + z)*(1.d0 - z)**3)    &
         / ((Mtot + 2.d0*mf - Mtot*z)**2 + 4.d0*g)
 
-d12_6 = ((1.d0 - z)**2                                                           &
+d12_6 = ((1.d0 - z)**3                                                           &
         / (Mtot*((Mtot + 2.d0*mf - Mtot*z)**2 + 4.d0*g)))                       &
         * ( (Mtot + 2.d0*mf)*(-1.d0 + v) * ( Mtot**2*(v*(-1.d0 + z) - z)       & ! <-- Parêntese aberto aqui
               *(-1.d0 + z)                                                        &
             + 2.d0*Mtot*mf*(-1.d0 - 2.d0*v*(-1.d0 + z) + z)                    &
             + 4.d0*(-1.d0 + v)*(mf**2 + g) ) )                                   ! <-- Parêntese fechado aqui
 
-d21_6 = (4.d0*Mtot**2*(-1.d0 + v)*(-1.d0 + z)*(1.d0 - z)**2)                   &
+d21_6 = (4.d0*Mtot**2*(-1.d0 + v)*(-1.d0 + z)*(1.d0 - z)**3)                   &
         / ((Mtot + 2.d0*mf - Mtot*z)**2 + 4.d0*g)
 
-d22_6 = ((1.d0 - z)**2                                                           &
+d22_6 = ((1.d0 - z)**3                                                           &
         / ((Mtot + 2.d0*mf - Mtot*z)**2 + 4.d0*g))                              &
         * ( 2.d0*(-1.d0 + v) * ( Mtot**2*(v*(-1.d0 + z) - z)*(-1.d0 + z)       & ! <-- Parêntese aberto aqui
             + 2.d0*Mtot*mf*(-1.d0 - 2.d0*v*(-1.d0 + z) + z)                    &
