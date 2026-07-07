@@ -18,7 +18,7 @@ PROGRAM SPLINE_2D_FERMION_BOSON
   INTEGER :: Nnz(100), Nng(100), Nnv(100), Nnu(100)
   INTEGER :: Nz, Ng, Nv, Nu
   DOUBLE PRECISION :: e, mf, ms, Mtot, mu, kappa, PI, gam0, Alfa, m, xi, u
-  DOUBLE PRECISION, EXTERNAL :: KERNEL_LOWER, KERNEL_UPPER
+  DOUBLE PRECISION, EXTERNAL :: KERNEL_LOWER, KERNEL_UPPER, KERNEL_UPPER_xi, KERNEL_LOWER_xi
   CHARACTER :: kernel_type
 
   open(unit=10, file="autovalores.dat",  STATUS="UNKNOWN")
@@ -40,14 +40,14 @@ PROGRAM SPLINE_2D_FERMION_BOSON
   END DO
   CLOSE(20)
 
-  Mtot  = 1.90d0
+  Mtot  = 1.99d0
   mf     = 1.d0
   ms = 1.d0
   m = (ms + mf)/2
-  mu    = 0.d0
+  mu    = 0.15d0
   kappa = SQRT(m**2 - 0.25d0*Mtot**2)
   gam0  = 3.d0
-  xi = 0.9999d0
+  xi = 0.9d0
 
   WRITE(10,'(A,I0,A,I0,A,I0)') "NMA: ",NMA," NMG: ",NMG," NMZ: ",NMZ
   WRITE(10,'(A,F20.10,A,F20.10,A,F20.10,A,F20.10,A,F20.10,A,F20.10,A,F20.10,A,F20.10,A,F20.10)') &
@@ -308,7 +308,7 @@ SUBROUTINE BUILD_ZMATRIX_CALIBRE(zv, gv, Nmz, Nmg, NMA, m, mu, kappa, PI, &
 
   DOUBLE PRECISION :: splz_z(Nmz), splz_q(Nmz), splg(Nmg)
   DOUBLE PRECISION :: z, g, gp, zq, v, dzq, dgp, dv
-  DOUBLE PRECISION, EXTERNAL :: KERNEL_UPPER, KERNEL_LOWER
+  DOUBLE PRECISION, EXTERNAL :: KERNEL_UPPER, KERNEL_LOWER, KERNEL_UPPER_xi, KERNEL_LOWER_xi 
   INTEGER :: i, j, k, l, p, q, r, index1, index2, f, s, t
 
   ZMATRIX = 0.d0
@@ -350,6 +350,10 @@ do s = 1, 2
               do r = 1, Nv
                 v  = Wv(r)
                 dv = DWv(r)
+              
+                ZMATRIX(index1,index2) = ZMATRIX(index1,index2) + &
+                  KERNEL_UPPER(z, zq, g, gp, v, m, mu, kappa, PI, s, f, ms, mf, Mtot, kernel_type, xi, u) * &
+                  splg(k)*splz_q(l)*dzq*dgp*dv
 
               do t = 1, Nu
 
@@ -357,7 +361,7 @@ do s = 1, 2
                 du = (1.d0 - v)*DUu(t)
 
                 ZMATRIX(index1,index2) = ZMATRIX(index1,index2) + &
-                  KERNEL_UPPER(z, zq, g, gp, v, m, mu, kappa, PI, s, f, ms, mf, Mtot, kernel_type, xi, u) * &
+                  KERNEL_UPPER_xi(z, zq, g, gp, v, m, mu, kappa, PI, s, f, ms, mf, Mtot, kernel_type, xi, u) * &
                   splg(k)*splz_q(l)*dzq*dgp*dv*du
 
               end do
@@ -370,11 +374,16 @@ do s = 1, 2
               do r = 1, Nv
                 v  = Wv(r)
                 dv = DWv(r)
+
+                ZMATRIX(index1,index2) = ZMATRIX(index1,index2) + &
+                  KERNEL_LOWER(z, zq, g, gp, v, m, mu, kappa, PI, s, f, ms, mf, Mtot, kernel_type, xi, u) * &
+                  splg(k)*splz_q(l)*dzq*dgp*dv
+
               do t = 1, Nu
                 u = Uu(t)*(1.d0-v)
                 du = (1.d0 - v)*DUu(t)
                 ZMATRIX(index1,index2) = ZMATRIX(index1,index2) + &
-                  KERNEL_LOWER(z, zq, g, gp, v, m, mu, kappa, PI, s, f, ms, mf, Mtot, kernel_type, xi, u) * &
+                  KERNEL_LOWER_xi(z, zq, g, gp, v, m, mu, kappa, PI, s, f, ms, mf, Mtot, kernel_type, xi, u) * &
                   splg(k)*splz_q(l)*dzq*dgp*dv*du
               end do
             end do
@@ -421,6 +430,7 @@ DOUBLE PRECISION FUNCTION KERNEL_UPPER(z, zp, g, gp, v, m, mu, kappa, PI, s, f, 
 
   Bsf  = 0.d0
   Pij2 = 0.d0
+
   if (kernel_type == 'v') then
     ! Coeficientes vetoriais de P1
     a     = 1.d0 + 2.d0*(mf)/(Mtot)
@@ -442,10 +452,48 @@ DOUBLE PRECISION FUNCTION KERNEL_UPPER(z, zp, g, gp, v, m, mu, kappa, PI, s, f, 
     if (f==2 .and. s==1) Bsf = c21_0
     if (f==2 .and. s==2) Bsf = c22_0 + c22_1*ku
 
-    
-  if (xi /= 1.d0) then
-! Constantes novas vetoriais de P2 (xi != 1) (Calibre arbitrário)
+  else
+    ! Coeficientes escalares
+    a     = 1.d0 + 2.d0*mf/Mtot
+    b_sca = 0.5d0 - mf/Mtot
+    c11_0 = 0.5d0*Mtot*a
+    c12_0 = -0.25d0*zp*v*Mtot*a - (1.d0-v)/Mtot*(g + z*M2_4)
+    c12_1 = 0.5d0*(1.d0-v)*(1.d0-z)
+    c21_0 = Mtot
+    c22_0 = -0.5d0*Mtot*zp*v - (1.d0-v)*Mtot*b_sca
+    if (f==1 .and. s==1) Bsf = c11_0
+    if (f==1 .and. s==2) Bsf = c12_0 + c12_1*ku
+    if (f==2 .and. s==1) Bsf = c21_0
+    if (f==2 .and. s==2) Bsf = c22_0
+  end if
+  
+  
+  KERNEL_UPPER = (1.d0+z)**2 / (32.d0*PI**2 * D0) * v**2 * Bsf / Du_e**2
+END FUNCTION KERNEL_UPPER
 
+
+DOUBLE PRECISION FUNCTION KERNEL_UPPER_xi(z, zp, g, gp, v, m, mu, kappa, PI, s, f, ms, mf, Mtot, kernel_type, xi, u)
+  IMPLICIT DOUBLE PRECISION (a-h, o-z)
+  DOUBLE PRECISION, INTENT(IN) :: z, zp, g, gp, v, PI, u
+  DOUBLE PRECISION, INTENT(IN) :: m, mu, kappa, ms, mf, Mtot, xi
+  INTEGER, INTENT(IN) :: s, f
+  CHARACTER, INTENT(IN) :: kernel_type
+  DOUBLE PRECISION :: M2_4, ku, lD1, lD2, kD  !começam com letra i-n: precisam de declaração explícita
+  LOGICAL, PARAMETER :: DEBUG_COEF = .TRUE.  ! mude para .TRUE. para ativar flags de explosão
+
+  M2_4  = 0.25d0*Mtot**2
+  Delta = 0.5d0*(ms - mf)
+
+  ! Eq. (16): D_0(gamma, z)
+  D0 = g + (1.d0 - z**2)*kappa**2 + (Delta - m*z)**2
+
+
+  ! Eq. (20): k_u^-
+  ku = 0.5d0*Mtot - 2.d0*(g + ms**2)/(Mtot*(1.d0+z))
+
+  Bsf  = 0.d0
+  Pij2 = 0.d0
+  
     f2 = - g * v*(1.d0 - v)*(1.d0 + zp) &
         - v*(1.d0 + z)*(gp + kappa**2) &
         + (Mtot**2 * v*(1.d0 + z) / 4.d0) &
@@ -778,28 +826,10 @@ if (f==2 .and. s==2) Bsf_xi = (d22_0 + f2 * (d22_2 + 0.25*d22_3*(Mtot/2.0*ku - z
       if(Pij2  /=Pij2  .or.abs(Pij2  )>1d10) &
         write(*,*)'[UP] Pij2   =',Pij2  ,' z=',z,' zp=',zp,' g=',g,' gp=',gp,' v=',v,' s,f=',s,f
     end if
-    
-    
-  end if
-
-  else
-    ! Coeficientes escalares
-    a     = 1.d0 + 2.d0*mf/Mtot
-    b_sca = 0.5d0 - mf/Mtot
-    c11_0 = 0.5d0*Mtot*a
-    c12_0 = -0.25d0*zp*v*Mtot*a - (1.d0-v)/Mtot*(g + z*M2_4)
-    c12_1 = 0.5d0*(1.d0-v)*(1.d0-z)
-    c21_0 = Mtot
-    c22_0 = -0.5d0*Mtot*zp*v - (1.d0-v)*Mtot*b_sca
-    if (f==1 .and. s==1) Bsf = c11_0
-    if (f==1 .and. s==2) Bsf = c12_0 + c12_1*ku
-    if (f==2 .and. s==1) Bsf = c21_0
-    if (f==2 .and. s==2) Bsf = c22_0
-  end if
   
   
-  KERNEL_UPPER = (1.d0+z)**2 / (32.d0*PI**2 * D0) * v**2 * Bsf / Du_e**2 + (1.d0-xi)* Pij2/(8.d0*PI**2)
-END FUNCTION KERNEL_UPPER
+  KERNEL_UPPER_xi = (1.d0-xi)* Pij2/(8.d0*PI**2)
+END FUNCTION KERNEL_UPPER_xi
 
 
 ! -----------------------------------------------------------------------
@@ -812,7 +842,7 @@ DOUBLE PRECISION FUNCTION KERNEL_LOWER(z, zp, g, gp, v, m, mu, kappa, PI, s, f, 
   INTEGER, INTENT(IN) :: s, f
   CHARACTER, INTENT(IN) :: kernel_type
   DOUBLE PRECISION :: M2_4, kd, lD1, Ld2  ! k,M começam com letra i-n: precisam de declaração explícita
-  LOGICAL, PARAMETER :: DEBUG_COEF = .TRUE.  ! mude para .TRUE. para ativar flags de explosão
+  LOGICAL, PARAMETER :: DEBUG_COEF = .FALSE.  ! mude para .TRUE. para ativar flags de explosão
 
   M2_4  = 0.25d0*Mtot**2
   Delta = 0.5d0*(ms - mf)
@@ -853,6 +883,56 @@ DOUBLE PRECISION FUNCTION KERNEL_LOWER(z, zp, g, gp, v, m, mu, kappa, PI, s, f, 
     if (f==1 .and. s==2) Bsf = c12_0 + c12_1*kd
     if (f==2 .and. s==1) Bsf = c21_0
     if (f==2 .and. s==2) Bsf = c22_0 + c22_1*kd
+
+  else
+    ! Coeficientes escalares
+    a     = 1.d0 + 2.d0*mf/Mtot
+    b_sca = 0.5d0 - mf/Mtot
+    c11_0 = 0.5d0*Mtot*a
+    c12_0 = -0.25d0*zp*v*Mtot*a - (1.d0-v)/Mtot*(g + z*M2_4)
+    c12_1 = 0.5d0*(1.d0-v)*(1.d0-z)
+    c21_0 = Mtot
+    c22_0 = -0.5d0*Mtot*zp*v - (1.d0-v)*Mtot*b_sca
+
+    if (f==1 .and. s==1) Bsf = c11_0
+    if (f==1 .and. s==2) Bsf = c12_0 + c12_1*kd
+    if (f==2 .and. s==1) Bsf = c21_0
+    if (f==2 .and. s==2) Bsf = c22_0
+  end if
+
+KERNEL_LOWER = (1.d0-z)**2 / (32.d0*PI**2 * D0) * v**2 * Bsf / Dd_e**2
+
+END FUNCTION KERNEL_LOWER
+
+DOUBLE PRECISION FUNCTION KERNEL_LOWER_xi (z, zp, g, gp, v, m, mu, kappa, PI, s, f, ms, mf, Mtot, kernel_type, xi, u)
+  IMPLICIT DOUBLE PRECISION (a-h, o-z)
+  DOUBLE PRECISION, INTENT(IN) :: z, zp, g, gp, v, PI, u
+  DOUBLE PRECISION, INTENT(IN) :: m, mu, kappa, ms, mf, Mtot, xi
+  INTEGER, INTENT(IN) :: s, f
+  CHARACTER, INTENT(IN) :: kernel_type
+  DOUBLE PRECISION :: M2_4, kd, lD1, Ld2  ! k,M começam com letra i-n: precisam de declaração explícita
+  LOGICAL, PARAMETER :: DEBUG_COEF = .TRUE.  ! mude para .TRUE. para ativar flags de explosão
+
+  M2_4  = 0.25d0*Mtot**2
+  Delta = 0.5d0*(ms - mf)
+
+  ! Eq. (16): D_0(gamma, z)
+  D0 = g + (1.d0 - z**2)*kappa**2 + (Delta - m*z)**2
+
+  ! Eq. (18): D_d(z', z, mF^2) = D_u(-z', -z, mF^2)
+  Dd_e = v*(1.d0-v)*(z-zp)*( g - (1.d0-z**2)*M2_4 + mf**2 )  &
+     + (1.d0-z)*( v*(1.d0-v)*( g + z**2*M2_4 )              &
+                + v*(gp + kappa**2)                           &
+                + v**2*zp**2*M2_4                             &
+                + (1.d0-v)*mu**2 )
+
+  
+
+  ! Eq. (20): k_d^-
+  kd = -0.5d0*Mtot + 2.d0*(g + mf**2)/(Mtot*(1.d0-z))
+
+  Bsf  = 0.d0
+  Pij2 = 0.d0
 
 
   if (xi /= 1.d0) then
@@ -1098,39 +1178,11 @@ if (f==2 .and. s==2) Bsf_xi = (d22_0 + f2 * (d22_2 + 0.25*d22_3*(Mtot/2.0*kd - z
     end if
   end if
 
-  else
-    ! Coeficientes escalares
-    a     = 1.d0 + 2.d0*mf/Mtot
-    b_sca = 0.5d0 - mf/Mtot
-    c11_0 = 0.5d0*Mtot*a
-    c12_0 = -0.25d0*zp*v*Mtot*a - (1.d0-v)/Mtot*(g + z*M2_4)
-    c12_1 = 0.5d0*(1.d0-v)*(1.d0-z)
-    c21_0 = Mtot
-    c22_0 = -0.5d0*Mtot*zp*v - (1.d0-v)*Mtot*b_sca
-
-    if (f==1 .and. s==1) Bsf = c11_0
-    if (f==1 .and. s==2) Bsf = c12_0 + c12_1*kd
-    if (f==2 .and. s==1) Bsf = c21_0
-    if (f==2 .and. s==2) Bsf = c22_0
-  end if
 
 
-  !razao = ((1.d0-xi)* Pij2) / ((1.d0-z)**2 / (32.d0*PI**2 * D0) * v**2 * Bsf / Dd**2)
-!if(z>2.d0  .and. g > 0.3d0 .and. g < 0.4d0 .and. gp >1.4d0 .and. gp<1.6d0 .and. z<0.8d0 .and. zp <0.71d0 .and. &
- !   zp >0.7d0 .and. v==0.5d0 .and. u == 0.25d0 .and. s ==1 .and. f==1) then
+KERNEL_LOWER_xi = (1.d0-xi)* Pij2/(8.d0*PI**2)
 
-  !    WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
-   !  '[LO] razao=', razao, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
-    !end if
-
- ! if(razao > 1d30) then
-! WRITE(15,'(A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,ES15.7,A,2I6)') &
- !    '[LO] razao=', razao, ' z=', z, ' zp=', zp, ' g=', g, ' gp=', gp, ' v=', v, ' u=', u, ' s,f=', s, f
- ! end if 
-
-KERNEL_LOWER = (1.d0-z)**2 / (32.d0*PI**2 * D0) * v**2 * Bsf / Dd_e**2 + (1.d0-xi)* Pij2/(8.d0*PI**2)
-
-END FUNCTION KERNEL_LOWER
+END FUNCTION KERNEL_LOWER_xi
 
 
 ! -----------------------------------------------------------------------
