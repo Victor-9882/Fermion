@@ -41,7 +41,7 @@ IMPLICIT DOUBLE PRECISION(a-h,o-z)
         m = 1.0d0
         mu = 0.50d0
         kappa = sqrt(m**2 - 0.25*Mtot**2)
-        xi = 0.9
+        xi = 1.0d0
 
         gam0 = 10.0d0
 
@@ -122,7 +122,7 @@ IMPLICIT DOUBLE PRECISION(a-h,o-z)
       ! PLOT de g1 e g2 em função de GAMMA, para z fixo
       !   unit 11 -> colunas: gamma  g1  g2
       !=========================================================
-      z_fixo = 0.4d0
+      z_fixo = 0.d0
       max_gamma_visualizacao = 3.d0
       N_PLOT = 1000
       call SPLMD1(zv, Nmz, z_fixo, splz)
@@ -141,7 +141,7 @@ IMPLICIT DOUBLE PRECISION(a-h,o-z)
                   end do
               end do
 
-              write(11, '(3ES25.17E3)') gamma_plot, soma1, soma2
+              write(11, '(ES25.17E3,2X,ES25.17E3,2X,ES25.17E3)') gamma_plot, soma1, soma2
           end do
 
       !=========================================================
@@ -166,7 +166,7 @@ IMPLICIT DOUBLE PRECISION(a-h,o-z)
               end do
           end do
 
-          write(15, '(3ES25.17E3)') z_plot, soma1, soma2
+          write(15, '(ES25.17E3,2X,ES25.17E3,2X,ES25.17E3)') z_plot, soma1, soma2
       end do
 
       ! =============================================================
@@ -258,7 +258,7 @@ IMPLICIT DOUBLE PRECISION(a-h,o-z)
           psi1_norm = psi1_num / psi1_ref
           psi2_norm = psi2_num / psi2_ref
 
-          write(18, '(3ES25.17E3)') gamma_plot, psi1_norm, psi2_norm
+          write(18, '(ES25.17E3,2X,ES25.17E3,2X,ES25.17E3)') gamma_plot, psi1_norm, psi2_norm
       end do
 
       close(18)
@@ -269,7 +269,7 @@ IMPLICIT DOUBLE PRECISION(a-h,o-z)
       ! =============================================================
       open(unit = 19, file = "plot_psi_z.dat", STATUS="UNKNOWN")
 
-      gamma_num = 0.3d0
+      gamma_num = 0.d0
       N_PLOT = 1500
 
       do k_plot = 0, N_PLOT
@@ -304,7 +304,7 @@ IMPLICIT DOUBLE PRECISION(a-h,o-z)
           psi1_norm = psi1_num / psi1_ref
           psi2_norm = psi2_num / psi2_ref
 
-          write(19, '(3ES25.17E3)') z_plot, psi1_norm, psi2_norm
+          write(19, '(ES25.17E3,2X,ES25.17E3,2X,ES25.17E3)') z_plot, psi1_norm, psi2_norm
       end do
 
       close(19)

@@ -1,14 +1,14 @@
 PROGRAM SPLINE_2D_FERMION_BOSON
   IMPLICIT DOUBLE PRECISION (a-h, o-z)
 
-  PARAMETER (NMG=22, NMZ=16, NMA=2*NMG*NMZ, LWORK=10*NMA)
+  PARAMETER (NMG=6, NMZ=6, NMA=2*NMG*NMZ, LWORK=10*NMA)
 
   DOUBLE PRECISION :: XMATRIX(NMA,NMA), ZMATRIX(NMA,NMA)
   DOUBLE PRECISION :: VR(NMA,NMA), VL(1,1)
   DOUBLE PRECISION :: ALPHAR(NMA), ALPHAI(NMA), BETA(NMA)
   DOUBLE PRECISION :: WR(NMA), WI(NMA), WORK(LWORK)
   DOUBLE PRECISION :: zv(NMZ+1), gv(NMG+1)
-  DOUBLE PRECISION :: c(NMG,NMZ), XG(NMA), YG(NMA)
+  DOUBLE PRECISION :: c(2, NMG,NMZ), XG(NMA), YG(NMA)
   DOUBLE PRECISION :: Xq(1000), DXq(1000), Yp(1000), DYp(1000)
   DOUBLE PRECISION :: Wv(1000), DWv(1000)
   DOUBLE PRECISION :: Uu(1000), DUu(1000)
@@ -40,14 +40,14 @@ PROGRAM SPLINE_2D_FERMION_BOSON
   END DO
   CLOSE(20)
 
-  Mtot  = 1.99d0
+  Mtot  = 1.90d0
   mf     = 1.d0
   ms = 1.d0
   m = (ms + mf)/2
-  mu    = 0.15d0
+  mu    = 0.d0
   kappa = SQRT(m**2 - 0.25d0*Mtot**2)
   gam0  = 3.d0
-  xi = 1.d0
+  xi = 0.9999d0
 
   WRITE(10,'(A,I0,A,I0,A,I0)') "NMA: ",NMA," NMG: ",NMG," NMZ: ",NMZ
   WRITE(10,'(A,F20.10,A,F20.10,A,F20.10,A,F20.10,A,F20.10,A,F20.10,A,F20.10,A,F20.10,A,F20.10)') &
@@ -170,14 +170,18 @@ PROGRAM SPLINE_2D_FERMION_BOSON
 
     WRITE(10,'(9999ES16.8)') (VR(j,1), j=1, NMA)
 
-    do j = 1, NMZ
-      do i = 1, NMG
-        c(i,j) = DABS(VR(i + (j-1)*NMG, 1))
+    do s = 1, 2
+      do j = 1, NMZ
+        do i = 1, NMG
+          c(s,i,j) = (VR(i + (j-1)*NMG + (s-1)*NMG*NMZ, 1))
+        end do
       end do
     end do
 
-    DO i = 1, NMG
-      WRITE(16,'(9999ES16.8)') (c(i,j), j=1, NMZ)
+    DO s = 1, 2
+      DO i = 1, NMG
+        WRITE(16,'(9999ES16.8)') (c(s,i,j), j=1, NMZ)
+      END DO
     END DO
 
   END DO
