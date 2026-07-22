@@ -43,7 +43,7 @@ IMPLICIT DOUBLE PRECISION(a-h,o-z)
         kappa = sqrt(m**2 - 0.25*Mtot**2)
         xi = 1.0d0
 
-        gam0 = 10.0d0
+        gam0 = 3.0d0
 
         Nz = 60
         Ng = 60
@@ -99,9 +99,8 @@ IMPLICIT DOUBLE PRECISION(a-h,o-z)
             zv(i+1) = XG(i)
             end do
 
-            zv(1)=-0.999999d0
-            zv(nmz)= 0.999999d0
-
+            zv(1)   = -0.999999999d0
+            zv(NMZ) =  0.99999999d0
 
             call G1D(IW,0.d0, N_intervalG, 1.0d0, 3.d0, Y)
             call COLLOC(IW,2,N_intervalG,Y,YG)
@@ -110,20 +109,32 @@ IMPLICIT DOUBLE PRECISION(a-h,o-z)
             gv(i+1)=YG(i)
             enddo
 
-            gv(1) = 0.0000001d0
-            gv(nmg) = 3.d0
+            gv(1)   = 0.d0
+            gv(NMG) = gam0
+
+    if (xi /= 1.d0) gv(1) = 0.001d0
 
 
             call SPLGR1 (zv,Nmz)
             call SPLGR2 (gv,Nmg)
 
 
+    g1_00 = 0.d0
+    call SPLMD1(zv, Nmz, 0.d0, splz)
+    call SPLMD2(gv, Nmg, 0.d0, splg)
+
+      do j = 1, Nmz
+          do i = 1, Nmg
+              g1_00 = g1_00 + c(1,i,j) * splg(i) * splz(j)
+          end do
+      end do
+
       !=========================================================
       ! PLOT de g1 e g2 em função de GAMMA, para z fixo
       !   unit 11 -> colunas: gamma  g1  g2
       !=========================================================
       z_fixo = 0.d0
-      max_gamma_visualizacao = 3.d0
+      max_gamma_visualizacao = 3.0d0
       N_PLOT = 1000
       call SPLMD1(zv, Nmz, z_fixo, splz)
 
@@ -141,14 +152,14 @@ IMPLICIT DOUBLE PRECISION(a-h,o-z)
                   end do
               end do
 
-              write(11, '(ES25.17E3,2X,ES25.17E3,2X,ES25.17E3)') gamma_plot, soma1, soma2
+             write(11, '(ES25.17E3,2X,ES25.17E3,2X,ES25.17E3)') gamma_plot, soma1 / g1_00, soma2 / g1_00
           end do
 
       !=========================================================
       ! PLOT de g1 e g2 em função de Z, para gamma fixo
       !   unit 15 -> colunas: z  g1  g2
       !=========================================================
-      gamma_fixo = 1.d0
+      gamma_fixo = 0.d0
       N_PLOT = 1500
       call SPLMD2(gv, Nmg, gamma_fixo, splg)
 
@@ -166,7 +177,7 @@ IMPLICIT DOUBLE PRECISION(a-h,o-z)
               end do
           end do
 
-          write(15, '(ES25.17E3,2X,ES25.17E3,2X,ES25.17E3)') z_plot, soma1, soma2
+          write(15, '(ES25.17E3,2X,ES25.17E3,2X,ES25.17E3)') z_plot, soma1/g1_00, soma2/g1_00
       end do
 
       ! =============================================================
